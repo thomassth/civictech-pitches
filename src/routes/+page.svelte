@@ -3,8 +3,14 @@
 		topic: string;
 		name: string;
 		mode: ('online' | 'local')[];
+		editable?: boolean;
+		hideEdit?: boolean;
 	};
 	let pitches: pitch[] = $state([]);
+
+	// hack night # (for data input)
+	let hackNightNum: number | undefined = $state(undefined);
+	let hackNightNumEditable = $state(true);
 
 	// common breakouts setup
 	let speakerName = $state('');
@@ -15,7 +21,8 @@
 					{
 						topic: 'Speaker breakout session',
 						name: speakerName ?? 'speaker',
-						mode: ['online', 'local']
+						mode: ['online', 'local'],
+						hideEdit: true
 					}
 				]
 			: []
@@ -23,7 +30,9 @@
 	let intro = $state(false);
 	let introName = $state('');
 	let introDetails: pitch[] = $derived(
-		intro ? [{ topic: 'Civic Tech 101', name: introName, mode: ['online', 'local'] }] : []
+		intro
+			? [{ topic: 'Civic Tech 101', name: introName, mode: ['online', 'local'], hideEdit: true }]
+			: []
 	);
 	let grid = $state(false);
 
@@ -86,6 +95,23 @@
 <div class="wrapper">
 	<div class="content" role="main">
 		<h1 class="title">Tonight's breakouts</h1>
+		<form>
+			<h3>
+				Hack Night #{#if hackNightNumEditable}<input type="number" bind:value={hackNightNum} />
+				{:else}
+					{hackNightNum}
+				{/if}
+				<button
+					onclick={(event) => {
+						event.preventDefault();
+
+						hackNightNumEditable = !hackNightNumEditable;
+					}}
+				>
+					{hackNightNumEditable ? 'Save' : 'Edit'}
+				</button>
+			</h3>
+		</form>
 		<details open>
 			<summary> Do we have them tonight? </summary>
 			<form>
@@ -202,7 +228,8 @@
 	input {
 		font-size: 20px;
 	}
-	form {
+	details,
+	form#new-pitch {
 		padding: 0.5lh 0;
 	}
 	.pitches > p {
