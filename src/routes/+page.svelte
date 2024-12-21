@@ -1,10 +1,12 @@
 <script lang="ts">
+	import Pitch from '../components/pitch.svelte';
 	type pitch = {
 		topic: string;
 		name: string;
 		mode: ('online' | 'local')[];
 		editable?: boolean;
 		hideEdit?: boolean;
+		id: string;
 	};
 	let pitches: pitch[] = $state([]);
 
@@ -22,7 +24,8 @@
 						topic: 'Speaker breakout session',
 						name: speakerName ?? 'speaker',
 						mode: ['online', 'local'],
-						hideEdit: true
+						hideEdit: true,
+						id: crypto.randomUUID()
 					}
 				]
 			: []
@@ -31,7 +34,15 @@
 	let introName = $state('');
 	let introDetails: pitch[] = $derived(
 		intro
-			? [{ topic: 'Civic Tech 101', name: introName, mode: ['online', 'local'], hideEdit: true }]
+			? [
+					{
+						topic: 'Civic Tech 101',
+						name: introName,
+						mode: ['online', 'local'],
+						hideEdit: true,
+						id: crypto.randomUUID()
+					}
+				]
 			: []
 	);
 	let grid = $state(false);
@@ -83,12 +94,18 @@
 		pitches.push({
 			topic: inputTopic,
 			name: inputPerson,
-			mode: inputMode
+			mode: inputMode,
+			id: crypto.randomUUID()
 		});
 
 		inputTopic = '';
 		inputPerson = '';
 		inputMode = [];
+	};
+
+	const editForm = (pitchInput: pitch) => {
+		const pitchIndex = pitches.findIndex((pitch) => pitch.id === pitchInput.id);
+		pitches[pitchIndex] = pitchInput;
 	};
 </script>
 
@@ -145,7 +162,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each hackNightList as pitch, index (pitch.topic)}
+						{#each hackNightList as pitch, index (pitch.id)}
 							<tr>
 								<th scope="row">{pitch.topic}</th>
 								<td>{pitch.name}</td>
@@ -155,54 +172,52 @@
 					</tbody>
 				</table>
 			{:else}
-				{#each hackNightList as pitch, index (pitch.topic)}
-					<p>
-						{`${pitch.topic} ${pitch.name ? `(${pitch.name})` : ''} - ${modeParser(pitch.mode, index)}`}
-					</p>
+				{#each hackNightList as pitch, index (pitch.id)}
+					<Pitch {pitch} {index} {breakoutRoomList} {editForm} />
 				{/each}
 			{/if}
-
-			<form id="new-pitch" onsubmit={addPitch}>
-				<div class="simulate-row">
-					<input
-						autocomplete="on"
-						type="text"
-						id="topic"
-						name="topic"
-						placeholder="topic"
-						bind:value={inputTopic}
-						required
-					/>
-					<input
-						autocomplete="on"
-						type="text"
-						id="person"
-						name="person"
-						placeholder="person"
-						bind:value={inputPerson}
-						required
-						autocapitalize="on"
-					/>
-					<div id="simulate-mode">
-						{modeParser(inputMode, -1)}
-					</div>
-				</div>
-				<fieldset>
-					<legend>Online / in-person?</legend>
-
-					<div>
-						<input type="checkbox" id="online" name="mode" value="online" bind:group={inputMode} />
-						<label for="online">Online</label>
-					</div>
-
-					<div>
-						<input type="checkbox" id="local" name="mode" value="local" bind:group={inputMode} />
-						<label for="local">In-person</label>
-					</div>
-				</fieldset>
-				<button>Add</button>
-			</form>
 		</div>
+		<form id="new-pitch" onsubmit={addPitch}>
+			<h2>New pitch</h2>
+			<div class="simulate-row">
+				<input
+					autocomplete="on"
+					type="text"
+					id="topic"
+					name="topic"
+					placeholder="topic"
+					bind:value={inputTopic}
+					required
+				/>
+				<input
+					autocomplete="on"
+					type="text"
+					id="person"
+					name="person"
+					placeholder="person"
+					bind:value={inputPerson}
+					required
+					autocapitalize="on"
+				/>
+				<div id="simulate-mode">
+					{modeParser(inputMode, -1)}
+				</div>
+			</div>
+			<fieldset>
+				<legend>Online / in-person?</legend>
+
+				<div>
+					<input type="checkbox" id="online" name="mode" value="online" bind:group={inputMode} />
+					<label for="online">Online</label>
+				</div>
+
+				<div>
+					<input type="checkbox" id="local" name="mode" value="local" bind:group={inputMode} />
+					<label for="local">In-person</label>
+				</div>
+			</fieldset>
+			<button>Add</button>
+		</form>
 	</div>
 </div>
 <footer class="footer"></footer>
@@ -231,8 +246,5 @@
 	details,
 	form#new-pitch {
 		padding: 0.5lh 0;
-	}
-	.pitches > p {
-		margin: 8px 0;
 	}
 </style>
